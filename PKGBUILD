@@ -6,7 +6,7 @@ _gitname=openocd
 pkgver=6268.6c74255
 pkgrel=1
 pkgdesc="Debugging, in-system programming and boundary-scan testing for embedded target devices (git version)"
-arch=('i686' 'x86_64')
+arch=('i686' 'x86_64' 'arm')
 url="http://openocd.sourceforge.net/"
 license=('GPL')
 depends=()
@@ -18,30 +18,64 @@ options=(!strip)
 install=openocd-git.install
 provides=('openocd')
 conflicts=('openocd')
-source=("${_gitname}::git://git.code.sf.net/p/openocd/code")
-md5sums=('SKIP')
+
+source=(
+    "${_gitname}::git://git.code.sf.net/p/openocd/code"
+    "openocd-0.5.0-exit-clean.patch", # http://marc.info/?l=openocd-development&m=132957145115589&w=2
+    )
+md5sums=(
+    'SKIP'
+    'SKIP'
+    )
 
 # Specify desired features and device support here. A list can be
 # obtained by running ./configure in the source directory.
-_features=(oocd_trace parport remote-bitbang sysfsgpio)
+_features=(sysfsgpio remote-bitbang )
 
 pkgver() {
   cd "${_gitname}"
   echo $(git rev-list --count master).$(git rev-parse --short master)
 }
 
+prepare() {
+  cd "$srcdir/${_gitname}"
+  patch -p1 <$srcdir/openocd-0.5.0-exit-clean.patch
+}
+
 build() {
   cd "$srcdir/${_gitname}"
 
   ./bootstrap
-  ./configure --prefix=/usr ${_features[@]/#/--enable-} \
+  ./configure --prefix=/usr \
     --enable-maintainer-mode \
-    --disable-werror
-  
+    --disable-werror \
+    ${_features[@]/#/--enable-} \
+    --enable-parport \
+    --enable-ftdi \
+    --enable-legacy-ft2232_libftdi \
+    --enable-amtjtagaccel \
+    --enable-ep93xx \
+    --enable-at91rm9200 \
+    --enable-gw16012 \
+    --enable-presto_libftdi \
+    --enable-usbprog \
+    --enable-oocd_trace \
+    --enable-jlink \
+    --enable-vsllink \
+    --enable-rlink \
+    --enable-stlink \
+    --enable-arm-jtag-ew \
+    --enable-buspirate \
+    --enable-usb_blaster_libftdi \
+    --enable-osbdm \
+    $(NULL)
+
   make
 }
 
 package() {
   cd "$srcdir/${_gitname}"
-  make DESTDIR=${pkgdir} install 
+  make DESTDIR=${pkgdir} install
+  #rm -rf ${srcdir}/$_gitname-build
+  #rm -rf $pkgdir/usr/share/info/dir
 }

@@ -1,0 +1,61 @@
+diff -ur openocd-0.5.0-nand-write-message/src/helper/command.c openocd-0.5.0-exit-clean/src/helper/command.c
+--- openocd-0.5.0-nand-write-message/src/helper/command.c	2011-08-09 07:34:19.000000000 +0200
++++ openocd-0.5.0-exit-clean/src/helper/command.c	2012-02-18 14:12:14.757676684 +0100
+@@ -123,10 +123,17 @@
+ static int command_retval_set(Jim_Interp *interp, int retval)
+ {
+ 	int *return_retval = Jim_GetAssocData(interp, "retval");
+-	if (return_retval != NULL)
+-		*return_retval = retval;
+ 
+-	return (retval == ERROR_OK) ? JIM_OK : JIM_ERR;
++	if (retval == ERROR_COMMAND_CLOSE_CONNECTION)
++	{
++		if (return_retval != NULL)
++			*return_retval = 0;
++		return JIM_EXIT;
++	} else {
++		if (return_retval != NULL)
++			*return_retval = retval;
++		return (retval == ERROR_OK) ? JIM_OK : JIM_ERR;
++	}
+ }
+ 
+ extern struct command_context *global_cmd_ctx;
+@@ -685,12 +692,12 @@
+ 		}
+ 		return retval;
+ 	} else if (retcode == JIM_EXIT) {
+-		/* ignore. */
+-		/* exit(Jim_GetExitCode(interp)); */
++		return ERROR_OK_EXIT;
+ 	} else {
+ 		const char *result;
+ 		int reslen;
+ 
++		fprintf (stderr, "command ran? Fetching result\n");
+ 		result = Jim_GetString(Jim_GetResult(interp), &reslen);
+ 		if (reslen > 0)
+ 		{
+diff -ur openocd-0.5.0-nand-write-message/src/helper/log.h openocd-0.5.0-exit-clean/src/helper/log.h
+--- openocd-0.5.0-nand-write-message/src/helper/log.h	2011-08-09 07:34:19.000000000 +0200
++++ openocd-0.5.0-exit-clean/src/helper/log.h	2012-02-18 14:05:52.377666892 +0100
+@@ -139,5 +139,5 @@
+  * make no assumptions about what went wrong and try to handle the problem.
+  */
+ #define ERROR_FAIL					(-4)
+-
++#define ERROR_OK_EXIT				(-5)
+ #endif /* LOG_H */
+diff -ur openocd-0.5.0-nand-write-message/src/openocd.c openocd-0.5.0-exit-clean/src/openocd.c
+--- openocd-0.5.0-nand-write-message/src/openocd.c	2011-08-09 07:34:19.000000000 +0200
++++ openocd-0.5.0-exit-clean/src/openocd.c	2012-02-18 14:08:14.237670522 +0100
+@@ -316,6 +316,8 @@
+ 		return EXIT_FAILURE;
+ 
+ 	ret = parse_config_file(cmd_ctx);
++	if (ret == ERROR_OK_EXIT)
++		return ERROR_OK;
+ 	if (ret != ERROR_OK)
+ 		return EXIT_FAILURE;
+ 
