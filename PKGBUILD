@@ -1,15 +1,20 @@
-# Maintainer: veox <veox ta wemakethings dot net>
+# Maintainer: yhfudev <yhfudev ta gmail dot com>
+# Contributor: veox <veox ta wemakethings dot net>
 # Contributor: Nick Østergaard <oe.nick at gmail dot com>
+# Contributor: Bartłomiej Piotrowski <bpiotrowski@archlinux.org>
+# Contributor: Matthias Bauch <matthias.bauch@gmail.com>
+# Contributor: Laszlo Papp <djszapi2 at gmail com>
+# Contributor: Samuel Tardieu <sam@rfc1149.net>
 
 pkgname=openocd-git
 _gitname=openocd
-pkgver=6268.6c74255
+pkgver=6723.3e1dfdc
 pkgrel=1
 pkgdesc="Debugging, in-system programming and boundary-scan testing for embedded target devices (git version)"
 arch=('i686' 'x86_64' 'arm')
 url="http://openocd.sourceforge.net/"
 license=('GPL')
-depends=('libftdi')
+depends=('libftdi' 'libftdi-compat' 'libusb' 'libusb-compat')
 optdepends=('libftdi: support devices using this FTDI implementation'
             'libftd2xx: support devices using this FTDI implementation'
             'hidapi: support CMSIS-DAP compliant devices')
@@ -37,7 +42,11 @@ sha1sums=(
 
 # Specify desired features and device support here. A list can be
 # obtained by running ./configure in the source directory.
-_features=(sysfsgpio remote-bitbang )
+_features=(
+    sysfsgpio amtjtagaccel arm-jtag-ew at91rm9200 buspirate ep93xx ftdi gw16012 jlink
+    oocd_trace opendous osbdm parport presto_libftdi remote-bitbang rlink stlink ti-icdi
+    ulink usbprog vsllink
+    )
 
 pkgver() {
   cd "${_gitname}"
@@ -57,24 +66,8 @@ build() {
     --enable-maintainer-mode \
     --disable-werror \
     ${_features[@]/#/--enable-} \
-    --enable-parport \
-    --enable-ftdi \
     --enable-legacy-ft2232_libftdi \
-    --enable-amtjtagaccel \
-    --enable-ep93xx \
-    --enable-at91rm9200 \
-    --enable-gw16012 \
-    --enable-presto_libftdi \
-    --enable-usbprog \
-    --enable-oocd_trace \
-    --enable-jlink \
-    --enable-vsllink \
-    --enable-rlink \
-    --enable-stlink \
-    --enable-arm-jtag-ew \
-    --enable-buspirate \
     --enable-usb_blaster_libftdi \
-    --enable-osbdm \
     $(NULL)
 
   make
